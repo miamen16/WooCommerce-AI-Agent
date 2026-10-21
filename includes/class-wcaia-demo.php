@@ -114,8 +114,9 @@ final class WCAIA_Demo {
         }
         $lines = [];
         foreach ($products as $product) {
-            $price = $product->get_price();
-            $price_text = ($price !== '' && $price !== null) ? wp_strip_all_tags(wc_price((float) $price)) : 'السعر غير محدد';
+            // Use WooCommerce's formatted price HTML so variable products can show a price range.
+            $formatted_price = $product->get_price_html();
+            $price_text = ($formatted_price !== '') ? wp_strip_all_tags($formatted_price) : 'السعر غير محدد';
             $stock = $product->is_in_stock() ? 'متوفر' : 'غير متوفر';
             $lines[] = $product->get_name() . ' — السعر: ' . $price_text . ' — ' . $stock . ' — ' . get_permalink($product->get_id());
         }
