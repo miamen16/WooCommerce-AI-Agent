@@ -105,7 +105,7 @@ final class WCAIA_Demo {
         // Search only when the message is not just a greeting and looks like a product request.
         $query = preg_replace('/^(ابحث عن|دور على|عايز|عايزة|أريد|اريد|منتج|products? for|search for)\s*/iu', '', $message);
         $query = trim($query);
-        if (mb_strlen($query, 'UTF-8') < 2 || preg_match('/^(شكرا|شكرًا|تمام|ok|okay|thanks|thank you)$/iu', $query)) {
+        if ((function_exists('mb_strlen') ? mb_strlen($query, 'UTF-8') : strlen($query)) < 2 || preg_match('/^(شكرا|شكرًا|تمام|ok|okay|thanks|thank you)$/iu', $query)) {
             return ['reply' => 'أقدر أبحث لك عن منتج بالاسم، أو أساعدك في متابعة طلب أو معرفة سياسة الشحن والاسترجاع. اكتب اسم المنتج اللي بتدور عليه.'];
         }
         $products = wc_get_products(['status' => 'publish', 'limit' => 5, 's' => $query, 'orderby' => 'relevance']);
