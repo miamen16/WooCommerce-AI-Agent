@@ -27,15 +27,26 @@ final class WCAIA_REST {
         set_transient($key, $count + 1, MINUTE_IN_SECONDS);
 
         $message = trim((string) $request->get_param('message'));
-        if (strlen($message) > 500) {
+        if (strlen($message) > 2000) {
             return new WP_Error('wcaia_message_too_long', 'الرسالة طويلة جدًا.', ['status' => 400]);
         }
 
+        // Accept either structured fields or "order 1234 email@example.com" in one message.
         $order_id = absint($request->get_param('order_id'));
         $email = sanitize_email((string) $request->get_param('email'));
-        if ($order_id && is_email($email)) {
+        if (!$order_id && preg_match('/(?:#|طلب\s*|order\s*|أوردر\s*)(\d{1,12})/iu', $message, $id_match)) {
+            $order_id = absint($id_match[1]);
+        }
+        if (!$email && preg_match('/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu', $message, $email_match)) {
+            $email = sanitize_email($email_match[0]);
+        }
+
+        if ($order_id || $email) {
+            if (!$order_id || !is_email($email)) {
+                return rest_ensure_response(['reply' => 'لمتابعة الطلب، ابعت رقم الطلب والبريد الإلكتروني المستخدم عند الشراء في نفس الرسالة. مثال: طلب 1234، customer@example.com']);
+            }
             $order = wc_get_order($order_id);
-            if (!$order || !hash_equals(strtolower($order->get_billing_email()), strtolower($email))) {
+            if (!$order || !hash_equals(strtolower((string) $order->get_billing_email()), strtolower($email))) {
                 return rest_ensure_response(['reply' => 'لم أتمكن من مطابقة رقم الطلب مع البريد الإلكتروني. راجع البيانات وحاول مرة أخرى.']);
             }
             $status = wc_get_order_status_name($order->get_status());
